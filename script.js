@@ -1,120 +1,91 @@
-document.getElementById('generateForm').addEventListener('click', generateInputs);
-
-let graphData = [];
-
-function generateInputs() {
-    const n = parseInt(document.getElementById('n').value);
+document.getElementById('generateForm').addEventListener('click', function() {
+    const n = document.getElementById('n').value;
     const formContainer = document.getElementById('formContainer');
-    formContainer.innerHTML = ''; 
-    if (isNaN(n) || n <= 0) {
-        alert("Please enter a valid number greater than 0");
-        return;
-    }
-
+    formContainer.innerHTML = '';
 
     for (let i = 0; i < n; i++) {
-        const inputGroup = document.createElement('div');
-        inputGroup.classList.add('input-group');
+        const fieldSet = document.createElement('div');
+        fieldSet.classList.add('field-set');
 
-       
-        const name1Input = document.createElement('input');
-        name1Input.type = 'text';
-        name1Input.placeholder = `Name 1 (Connection ${i + 1})`;
-        name1Input.required = true;
+        fieldSet.innerHTML = `
+            <label>Name 1:</label>
+            <input type="text" name="name1-${i}" required>
 
-    
-        const name2Input = document.createElement('input');
-        name2Input.type = 'text';
-        name2Input.placeholder = `Name 2 (Connection ${i + 1})`;
-        name2Input.required = true;
+            <label>Name 2:</label>
+            <input type="text" name="name2-${i}" required>
 
-       
-        const distanceInput = document.createElement('input');
-        distanceInput.type = 'number';
-        distanceInput.placeholder = `Distance (Connection ${i + 1})`;
-        distanceInput.required = true;
+            <label>Distance:</label>
+            <input type="number" name="distance-${i}" min="1" required>
 
- 
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'Remove';
-        removeBtn.classList.add('remove-btn');
-        removeBtn.onclick = () => inputGroup.remove();
+            <label>Direction:</label>
+            <select name="direction-${i}" required>
+                <option value="North">North</option>
+                <option value="North-East">North-East</option>
+                <option value="East">East</option>
+                <option value="South-East">South-East</option>
+                <option value="South">South</option>
+                <option value="South-West">South-West</option>
+                <option value="West">West</option>
+                <option value="North-West">North-West</option>
+            </select>
+        `;
 
-        
-        inputGroup.appendChild(name1Input);
-        inputGroup.appendChild(name2Input);
-        inputGroup.appendChild(distanceInput);
-        inputGroup.appendChild(removeBtn);
-
-       
-        formContainer.appendChild(inputGroup);
+        formContainer.appendChild(fieldSet);
     }
-}
-
+});
 
 function validateForm() {
-    const inputs = document.querySelectorAll('.input-group input');
-    let isValid = true;
-    
-    
-    document.querySelectorAll('.error').forEach(error => error.remove());
+    const formContainer = document.getElementById('formContainer');
+    const inputs = formContainer.querySelectorAll('input, select');
 
-    inputs.forEach(input => {
-        if (!input.value) {
-            input.style.borderColor = 'red';
-            const error = document.createElement('div');
-            error.classList.add('error');
-            error.textContent = 'This field is required!';
-            input.parentElement.appendChild(error);
-            isValid = false;
-        } else if (input.type === 'number' && parseFloat(input.value) <= 0) {
-            input.style.borderColor = 'red';
-            const error = document.createElement('div');
-            error.classList.add('error');
-            error.textContent = 'Distance must be a positive number!';
-            input.parentElement.appendChild(error);
-            isValid = false;
-        } else {
-            input.style.borderColor = '#ccc';
+    for (let input of inputs) {
+        if (!input.checkValidity()) {
+            alert('Please fill all fields correctly.');
+            return false;
         }
-    });
-
-    if (!isValid) {
-        alert('Please fill in all fields before submitting!');
-        return false;
     }
+    generateResult();
+    return false;
+}
 
-   
-    graphData = [];
-    const inputGroups = document.querySelectorAll('.input-group');
-    inputGroups.forEach(group => {
-        const name1 = group.querySelector('input:nth-child(1)').value;
-        const name2 = group.querySelector('input:nth-child(2)').value;
-        const distance = parseFloat(group.querySelector('input:nth-child(3)').value);
-        graphData.push({ name1, name2, distance });
+function generateResult() {
+    const formContainer = document.getElementById('formContainer');
+    const resultContainer = document.getElementById('resultContainer');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    const data = [];
+    formContainer.querySelectorAll('.field-set').forEach((set, index) => {
+        const name1 = set.querySelector(`input[name="name1-${index}"]`).value;
+        const name2 = set.querySelector(`input[name="name2-${index}"]`).value;
+        const distance = set.querySelector(`input[name="distance-${index}"]`).value;
+        const direction = set.querySelector(`select[name="direction-${index}"]`).value;
+
+        data.push({ name1, name2, distance, direction });
     });
 
-    
-    calculateShortestPath(graphData);
-    return false; 
+    if (data.length > 0) {
+        resultContainer.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        downloadBtn.style.display = 'inline-block';
+        downloadBtn.dataset.fileContent = JSON.stringify(data, null, 2);
+    } else {
+        resultContainer.innerHTML = '<p>No data to display.</p>';
+        downloadBtn.style.display = 'none';
+    }
 }
 
-// Shortest Path Calculation (Dijkstra's Algorithm)
-function calculateShortestPath(graphData) {
-    // Example: Simple Dijkstra's Algorithm simulation (real implementation can be added)
-    const resultContainer = document.getElementById('resultContainer');
-    resultContainer.innerHTML = ''; // Clear previous results
+function downloadData() {
+    const content = document.getElementById('downloadBtn').dataset.fileContent;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const link = document.createElement('a');
 
-   
-    resultContainer.innerHTML = `<strong>Graph Data:</strong> <pre>${JSON.stringify(graphData, null, 2)}</pre>`;
-
-    // Real shortest path calculation would happen here...
+    link.href = URL.createObjectURL(blob);
+    link.download = 'pipe_network_data.txt';
+    link.click();
 }
 
-// Reset Form
 function resetForm() {
     document.getElementById('pipeForm').reset();
     document.getElementById('formContainer').innerHTML = '';
     document.getElementById('resultContainer').innerHTML = '';
-    graphData = [];
+    document.getElementById('downloadBtn').style.display = 'none';
 }
