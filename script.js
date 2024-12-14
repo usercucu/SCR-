@@ -64,17 +64,20 @@ function generateResult() {
     });
 
     if (data.length > 0) {
-        resultContainer.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        const outputData = JSON.stringify(data, null, 2);
+        resultContainer.innerHTML = `<pre>${outputData}</pre>`;
         downloadBtn.style.display = 'inline-block';
-        downloadBtn.dataset.fileContent = JSON.stringify(data, null, 2);
+        downloadBtn.dataset.fileContent = outputData;
+
+        // Save the output file automatically
+        saveOutputToFile(outputData);
     } else {
         resultContainer.innerHTML = '<p>No data to display.</p>';
         downloadBtn.style.display = 'none';
     }
 }
 
-function downloadData() {
-    const content = document.getElementById('downloadBtn').dataset.fileContent;
+function saveOutputToFile(content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const link = document.createElement('a');
 
